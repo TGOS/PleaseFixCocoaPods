@@ -149,7 +149,9 @@ external module.
 *However, within all public headers imports/includes must look exactly as when
 integrating pods! See above. That's because public headers will in fact become
 a part of some target and there only these kind of imports/includes are
-guaranteed to work.*
+guaranteed to work. So if `blah.m` imports `priv.h`, it will use `#import "priv.h"`
+but if the public header `pubA.h` imports `pubB.h`, it must use  `#import <XYZ/pubB.h>`, 
+otherwise build the pod can still work but intgrating it will fail.*
 
 Pod developers don't have to write an umbrella header themselves. CocoaPods
 automatically creates one for them if required. The name is the name of the
@@ -168,6 +170,9 @@ create neither a module map nor an umbrella header and that way the umbrella
 header can also have a different name than the module (pod) itself, if that
 is desired. In that case it's all entirely up to the pod developer.
 
+**Pod developers writing their own umbrella headers MUST NOT ever import
+the umbrella header themselves, it is only for using the module, not for
+building it!**
 
 ## For the Developers of CocoaPods itself
 
