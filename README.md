@@ -184,22 +184,22 @@ well as the private headers privK.h and privL.h, the directory structure could
 look as follows:
 
     Pods/XYZ/Pod:
-	    fileA.m
+      fileA.m
       fileB.m
-			pubA.h
-			pubB.h
-			privK.h
-			privL.h
-
-		Pods/Headers/Public/XYZ/XYZ:
-		  pubA.h --> ../../../XYZ/Pod/pubA.h
-			pubB.h --> ../../../XYZ/Pod/pubB.h
+      pubA.h
+      pubB.h
+      privK.h
+      privL.h
+      
+    Pods/Headers/Public/XYZ/XYZ:
+      pubA.h --> ../../../XYZ/Pod/pubA.h
+      pubB.h --> ../../../XYZ/Pod/pubB.h
 
 Doing the same with the private headers is actually not required. One could do
 the following:
 
-		Pods/Headers/Private/XYZ:
-		  privK.h --> ../../../XYZ/Pod/privK.h
+    Pods/Headers/Private/XYZ:
+      privK.h --> ../../../XYZ/Pod/privK.h
       privL.h --> ../../../XYZ/Pod/privL.h
 
 and then add "Pods/Headers/Private/XYZ" to the users header search path, but
@@ -209,7 +209,7 @@ When building the pod itself, the directory `Pods/Headers/Public/XYZ` must be
 in the system header search paths, otherwise imports like
 
       #import <XYZ/pubA.h>
-			#import <XYZ/pubB.h>
+      #import <XYZ/pubB.h>
 
 will not work. If the pod wants to preserve some more complex import structure,
 (`header_mappings_dir`), make sure it is replicated in
