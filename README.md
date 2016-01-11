@@ -184,8 +184,8 @@ Public headers or symlinks to public headers must exist in a directory named
 after the module and the parent directory of that directory must be in the
 system search paths to make the import scheme of above work.
 
-E.g. you have a module XYZ with the public headers pubA.h and pubB.h and as
-well as the private headers privK.h and privL.h, the directory structure could
+E.g. you have a module XYZ with the public headers `pubA.h` and `pubB.h` and as
+well as the private headers `privK.h` and `privL.h`, the directory structure could
 look as follows:
 
     Pods/XYZ/Pod:
