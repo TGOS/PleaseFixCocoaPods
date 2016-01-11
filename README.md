@@ -267,7 +267,7 @@ then the public header target should be set per pod and it should be something
 like `include/ModuleName`.
 
 
-### Behavior when Pods are Static Libs
+### Behavior when Pods are Frameworks
 
 When building a framework, it is really required to mark public headers as
 "public" in the Pod project to make sure Xcode copies them to the target
