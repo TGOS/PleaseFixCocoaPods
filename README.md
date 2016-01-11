@@ -151,7 +151,7 @@ integrating pods! See above. That's because public headers will in fact become
 a part of some target and there only these kind of imports/includes are
 guaranteed to work. So if `blah.m` imports `priv.h`, it will use `#import "priv.h"`
 but if the public header `pubA.h` imports `pubB.h`, it must use  `#import <XYZ/pubB.h>`, 
-otherwise build the pod can still work but intgrating it will fail.*
+otherwise building the pod may still work but intgrating it will fail.*
 
 Pod developers don't have to write an umbrella header themselves. CocoaPods
 automatically creates one for them if required. The name is the name of the
