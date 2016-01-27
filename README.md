@@ -28,7 +28,7 @@ recommendations of Apple and does things exactly like Apple is doing them.
 
 	- **Frameworks**
 
-		They are bundles themselves (directories appearing as a single file),
+		Frameworks are bundles (directories appearing as a single file),
 		consisting of at least a property list (`Info.plist`) and a library.
 		They can also contain further files like headers or a module map, as well
 		as further embedded frameworks and dynamic libraries. Their extensions is
@@ -36,7 +36,7 @@ recommendations of Apple and does things exactly like Apple is doing them.
 		framework needs to be shipped together with the target, yet not necessarily
 		all files (the library and the property list are required, as well as any
 		embedded frameworks and libraries, the rest isn't). Frameworks can also
-		contain a Static library (that's very rare, but allowed), in that case the
+		contain a static library (that's very rare, but allowed), in that case the
 		framework itself doesn't have to be shipped the application after linking.
 
  CocoaPods currently supports only Static Libraries (default and only works
@@ -75,7 +75,7 @@ recommendations of Apple and does things exactly like Apple is doing them.
   An Umbrella Header is a special public module header that includes/imports
 	all the other public module headers. Instead of inculding/importing single
 	public headers, one simply imports the umbrella header. By default it is
-	named exactly like the module itself, os if the module is named `MyModule`,
+	named exactly like the module itself, so if the module is named `MyModule`,
 	the umbrella headers would be named `MyModule.h`.
 
 - **Module Map**
@@ -127,7 +127,7 @@ can also import modules using the new syntax
 
 and in Swift one just uses
 
-    import XYZ;
+    import XYZ
 
 
 ## Writing Pods (for Pod Developers)
@@ -184,7 +184,7 @@ Public headers or symlinks to public headers must exist in a directory named
 after the module and the parent directory of that directory must be in the
 system search paths to make the import scheme of above work.
 
-E.g. you have a module XYZ with the public headers `pubA.h` and `pubB.h` and as
+E.g. you have a module `XYZ` with the public headers `pubA.h` and `pubB.h` and as
 well as the private headers `privK.h` and `privL.h`, the directory structure could
 look as follows:
 
@@ -207,8 +207,8 @@ the following:
       privK.h --> ../../../XYZ/Pod/privK.h
       privL.h --> ../../../XYZ/Pod/privL.h
 
-and then add "Pods/Headers/Private/XYZ" to the users header search path, but
-it serves no meaningful purpose, at least not in a flat header hierarchy.
+and then add `Pods/Headers/Private/XYZ` to the users header search path, *but
+it serves no meaningful purpose*, at least not in a flat header hierarchy.
 
 When building the pod itself, the directory `Pods/Headers/Public/XYZ` must be
 in the system header search paths, otherwise imports like
@@ -216,16 +216,14 @@ in the system header search paths, otherwise imports like
       #import <XYZ/pubA.h>
       #import <XYZ/pubB.h>
 
-will not work. If the pod wants to preserve some more complex import structure,
-(`header_mappings_dir`), make sure it is replicated in
-`Pods/Headers/Public/XYZ` to make these imports work as well!
+will not work, while private headers from `Pods/XYZ/Pod` will work
+automatically as long as they are part of the Pod project; which they
+always are! Fiddling around with `USER_HEADER_SEARCH_PATHS` is never
+required, neither when building the Pod, nor when using the Pod in a
+target project. 
 
-**NOTE: replicate in `Pods/Headers/Public/XYZ`, NOT in
-`Pods/Headers/Public/XYZ/XYZ` - if developers want the module name in the
-import, they can can control that themselves by making a directory with that
-name but they would have no way to get it out of the path if CocoaPods forces
-it there and if they could choose import statements freely, they'd hardly
-use `header_mappings_dir` in the first place!**
+
+### The Umbrella Header
 
 If there is a public header named `XYZ.h`, this header shall be treated at the
 umbrella header and used unmodified. If no such header is found and umbrella
@@ -247,7 +245,27 @@ such headers is found, an umbrella header is generated together with the
 module map.
 
 
-### Behavior when Pods are Static Libs
+### Complex Header Structures (header_mappings_dir)
+
+Touching `USER_HEADER_SEARCH_PATHS` is always wrong, except for cases
+where `header_mappings_dir` is being used! If the pod wants to preserve 
+some more complex import structure, (`header_mappings_dir`), make sure 
+it is replicated in `Pods/MappingsDir/XYZ` and add this directory to 
+`USER_HEADER_SEARCH_PATHS`:
+
+    USER_HEADER_SEARCH_PATHS = $(inherited) "$(PODDIR)/Pods/MappingsDir/XYZ"
+    
+to make sure mapping dir imports with quotes will work, e.g.
+
+    #import "foo/bar/foorbar.h"
+    
+must work. It would now work if `foo`, `bar` and `foobar.h` would all be
+added to the Pods project, as Xcode doesn't care about subdirectories.
+
+
+### Additional Behavior 
+
+#### Behavior when Pods are Static Libs
 
 When static libraries are used, there is no need to tag any header files in
 pod project as "public". This will only cause them to be copied to the build
@@ -258,25 +276,35 @@ always flat and this directory is also within the header search paths in Xcode!
 Instead, when building the actual target, add the public headers of all
 integrated pods to the system header search path:
 
-    = ($inherited) "Pods/Headers/Public/XYZ" ...
+    HEADER_SEARCH_PATHS = ($inherited) "$(PODDIR)/Pods/Headers/Public/XYZ" ...
 
 this is enough to make `#import <XYZ/header.h>` imports work (e.g. from within
 the umbrella header), there are no name conflicts as all imports are prefixed
 by the module name and thus **uniquely** identifying one specific header,
 and finally linking the target against the static library from the build dir.
 
-Targets don't need any access to private headers or implementation files of
+*Targets don't need any access to private headers or implementation files of
 a pod. So that's really all that is required and is much nicer than the
-current behavior. Alternatively one could copy public headers to build dir but
-then the public header target should be set per pod and it should be something
-like `include/ModuleName`.
+current behavior.*
+
+Copying public headers to the build dir and referencing them from there is
+a bad idea. As long at the pod hasn't been built, the headers are not found 
+and Xcode may show errors for the current target. However, when building, 
+the target will build just fine, as the pod is build first, the headers are
+copied and thus also found when building the target. After that no errors
+are shown by Xcode anymore, but the errors will return whenever the build
+dir is cleaned completely.
+
+If it is desired to copy public files to build dir, e.g. for easy archiving
+of all build artifacts, they should be copied to a subdirectory, like 
+`include/ModuleName`, and not get referenced by any Xcode build setting!
 
 
-### Behavior when Pods are Frameworks
+#### Behavior when Pods are Frameworks
 
 When building a framework, it is really required to mark public headers as
-"public" in the Pod project to make sure Xcode copies them to the target
-directory, which is not the build dir, but the headers dir within the framework
-directory. Unlike in case of static libraries, there is no need to fiddle
-around with any search paths at all, just linking against the framework will
-make imports work as desired and expected.
+*public* in the Pod project to make sure Xcode copies them to the target
+directory, which is not the build dir, *but the headers dir within the framework
+directory.* Unlike in case of static libraries, there is no need to fiddle
+around with any search paths settings at all, just linking against the framework
+will make imports work as desired, expected and explained above.
